@@ -1,20 +1,14 @@
+# EOSH - Elan Open Source Hacking 2023 byb Lambda IITH
+
 ## Market Place Backend
 
 This repository contains the code for the backend of a college market place application.
 
 ### Tech Stack
 
-<ul>
-<li>
-<a href="https://fastapi.tiangolo.com/?h=installation#installation">FastAPI - A Backend Python Framework</a>
-</li>
-<li>
-<a href="https://python-poetry.org/docs/basic-usage/">Poetry - A Dependency Management tool in Python</a>
-</li>
-<li>
-<a href="https://www.postgresql.org">PostgreSQL - Database</a>
-</li>
-</ul>
+- [FastAPI - A Backend Python Framework](https://fastapi.tiangolo.com/?h=installation#installation)
+- [Poetry - A Dependency Management tool in Python](https://python-poetry.org/docs/basic-usage/)
+- [PostgreSQL - Database](https://www.postgresql.org)
 
 ### File Structure
 
@@ -28,8 +22,12 @@ This repository contains the code for the backend of a college market place appl
 - Install the above tools. </br>
 - Install the dependencies from the `pyproject.toml` file. </br>
 - Refer to the sql file in `db/init.sql` to get the models used in the database.
-- Add a `.env` file, following `.env.example` accordingly.
+- Initialize a `.env` file, following `.env.example` accordingly.
 
 ### Bonus
 
 - Bonus points for making use of other open source tools to make the code cleaner and readable. For example [aiosql](https://nackjicholson.github.io/aiosql/), [pydantic](https://docs.pydantic.dev)
+
+### Issues and Points
+
+### Guidelines
