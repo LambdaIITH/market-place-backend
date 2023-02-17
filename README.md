@@ -1,4 +1,4 @@
-# EOSH - Elan Open Source Hacking 2023 byb Lambda IITH
+# EOSH - Elan Open Source Hacking 2023 by Lambda IITH
 
 ## Market Place Backend
 
