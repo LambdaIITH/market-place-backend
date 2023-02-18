@@ -63,9 +63,9 @@ def create_item(item: Item):
     finally: 
         conn.commit()
 
-
+# Pydantic model for bid which is used in the post request
 class Bid(BaseModel):
-    item_id: int
+    item_id: int | None
     bidder_email: str 
     bid_amount: float
 
@@ -74,10 +74,27 @@ class Bid(BaseModel):
 def create_bid(item_id: int, bid: Bid):
     try:
         # post_bid is a function in db/bids.sql
-        a: int = queries.post_bid(conn, item_id = bid.item_id, bidder_email = bid.bidder_email, bid_amount = bid.bid_amount)
+        a: int = queries.post_bid(conn, item_id = item_id, bidder_email = bid.bidder_email, bid_amount = bid.bid_amount)
     except:
         raise HTTPException(status_code=400, detail="Insert bid failed")
     else: 
         raise HTTPException(status_code=200, detail="Insert bid successful") 
     finally: 
         conn.commit()
+
+
+# currently: http://127.0.0.1:8000/bids/accept/<item_id>
+# future: http://127.0.0.1:8000/bids/accept/<item_id>/<bid_id>
+@app.post("/bids/accept/{item_id}/{id}")
+def accept_bid(item_id: int):
+    try:
+        # accept_bid is a function in db/bids.sql
+        a: int = queries.accept_bid(conn, item_id = item_id)
+        # id is the id of the bid that was accepted, which could be a future addition to the code
+    
+    except:
+        raise HTTPException(status_code=400, detail="Accept bid failed")
+    else: 
+        raise HTTPException(status_code=200, detail="Accept bid successful")
+    finally: 
+        conn.commit() 
