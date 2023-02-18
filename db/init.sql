@@ -1,3 +1,5 @@
+--name: create_schema#
+
 CREATE TABLE users (
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) PRIMARY KEY,
@@ -32,3 +34,15 @@ CREATE TABLE sales (
   bid_id INTEGER NOT NULL,
   FOREIGN KEY (bid_id) REFERENCES bids(id),
 );
+
+-- name: create_item!
+insert into items(name, description, price, seller_email) values(:name, :description, :price, :seller_email)
+
+--name: create_bid!
+insert into bids(item_id,bidder_email,bid_amount) values(:item_id, :bidder_email, :bid_amount)
+
+--name: get_bid
+select * from bids where item_id = :item_id;
+
+--name: accept_bid!
+update items set status = true, date_of_sale = CURRENT_TIMESTAMP where id = :item_id;
