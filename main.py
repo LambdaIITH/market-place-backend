@@ -41,7 +41,7 @@ def read_item(item_id: int, q: Union[str, None] = None):
     return {"item_id": item_id, "q": q}
 
 # item_queries is aiosql object which is used to call the functions in db/items.sql
-item_queries = aiosql.from_path("db/items.sql", "psycopg2") 
+queries = aiosql.from_path("db/queries.sql", "psycopg2") 
 
 # Pydantic model for item which is used in the post request
 class Item(BaseModel):
@@ -55,10 +55,29 @@ class Item(BaseModel):
 def create_item(item: Item):
     try:
         # post_item is a function in db/items.sql
-        a: int = item_queries.post_item(conn, name = item.name, description = item.description, price = item.price, seller_email = item.seller_email)
+        a: int = queries.post_item(conn, name = item.name, description = item.description, price = item.price, seller_email = item.seller_email)
     except:
-        raise HTTPException(status_code=400, detail="Update failed")
+        raise HTTPException(status_code=400, detail="Insert item failed")
     else: 
-        raise HTTPException(status_code=200, detail="Update successful") 
+        raise HTTPException(status_code=200, detail="Insert item successful") 
+    finally: 
+        conn.commit()
+
+
+class Bid(BaseModel):
+    item_id: int
+    bidder_email: str 
+    bid_amount: float
+
+# http://127.0.0.1:8000/bids/<item_id>
+@app.post("/bids/{item_id}")
+def create_bid(item_id: int, bid: Bid):
+    try:
+        # post_bid is a function in db/bids.sql
+        a: int = queries.post_bid(conn, item_id = bid.item_id, bidder_email = bid.bidder_email, bid_amount = bid.bid_amount)
+    except:
+        raise HTTPException(status_code=400, detail="Insert bid failed")
+    else: 
+        raise HTTPException(status_code=200, detail="Insert bid successful") 
     finally: 
         conn.commit()
