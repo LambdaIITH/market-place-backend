@@ -7,6 +7,7 @@ from psycopg2.extras import RealDictCursor
 import os
 from pydantic import BaseModel
 import aiosql
+import json
 
 load_dotenv()
 
@@ -55,8 +56,9 @@ class Item(BaseModel):
 def create_item(item: Item):
     try:
         # post_item is a function in db/items.sql
-        a: int = queries.post_item(conn, name = item.name, description = item.description, price = item.price, seller_email = item.seller_email)
-    except:
+        res: int = queries.post_item(conn, name = item.name, description = item.description, price = item.price, seller_email = item.seller_email)
+    except Exception as error:
+        print(error)
         raise HTTPException(status_code=400, detail="Insert item failed")
     else: 
         raise HTTPException(status_code=200, detail="Insert item successful") 
@@ -74,8 +76,9 @@ class Bid(BaseModel):
 def create_bid(item_id: int, bid: Bid):
     try:
         # post_bid is a function in db/bids.sql
-        a: int = queries.post_bid(conn, item_id = item_id, bidder_email = bid.bidder_email, bid_amount = bid.bid_amount)
-    except:
+        res: int = queries.post_bid(conn, item_id = item_id, bidder_email = bid.bidder_email, bid_amount = bid.bid_amount)
+    except Exception as error:
+        print(error)
         raise HTTPException(status_code=400, detail="Insert bid failed")
     else: 
         raise HTTPException(status_code=200, detail="Insert bid successful") 
@@ -89,12 +92,30 @@ def create_bid(item_id: int, bid: Bid):
 def accept_bid(item_id: int):
     try:
         # accept_bid is a function in db/bids.sql
-        a: int = queries.accept_bid(conn, item_id = item_id)
+        res: int = queries.accept_bid(conn, item_id = item_id)
         # id is the id of the bid that was accepted, which could be a future addition to the code
     
-    except:
+    except Exception as error:
+        print(error)
         raise HTTPException(status_code=400, detail="Accept bid failed")
     else: 
         raise HTTPException(status_code=200, detail="Accept bid successful")
     finally: 
         conn.commit() 
+
+
+@app.get("/bids/{item_id}")
+def get_item(item_id: int):
+    try:
+        # get_item is a function in db/items.sql
+        res: dict = queries.get_bids_for_item(conn, item_id = item_id)
+        res: str = json.dumps(res[0],default=str) # convert dict to json string, non-json serializable data types are converted to strings
+        res_json = json.loads(res) # convert to json object
+
+    except Exception as error:
+        print(error)
+        raise HTTPException(status_code=400, detail="Get item failed")
+    else: 
+        return res_json
+    finally: 
+        conn.commit()
