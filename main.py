@@ -1,10 +1,12 @@
 from typing import Union
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
+from pydantic import BaseModel
+import aiosql
 
 load_dotenv()
 
@@ -38,4 +40,25 @@ def read_root():
 def read_item(item_id: int, q: Union[str, None] = None):
     return {"item_id": item_id, "q": q}
 
+# item_queries is aiosql object which is used to call the functions in db/items.sql
+item_queries = aiosql.from_path("db/items.sql", "psycopg2") 
 
+# Pydantic model for item which is used in the post request
+class Item(BaseModel):
+    name: str
+    description: str 
+    price: float
+    seller_email: str
+
+# http://127.0.0.1:8000/items
+@app.post("/items")
+def create_item(item: Item):
+    try:
+        # post_item is a function in db/items.sql
+        a: int = item_queries.post_item(conn, name = item.name, description = item.description, price = item.price, seller_email = item.seller_email)
+    except:
+        raise HTTPException(status_code=400, detail="Update failed")
+    else: 
+        raise HTTPException(status_code=200, detail="Update successful") 
+    finally: 
+        conn.commit()
