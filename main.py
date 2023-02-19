@@ -126,10 +126,14 @@ class Item(BaseModel):
 
 # http://127.0.0.1:8000/items
 @app.post("/items")
-def create_item(item: Item):
+def create_item(request : Request,item: Item, email: str = Depends(get_access_token)):
     try:
+        if email != item.seller_email:
+            raise HTTPException(status_code=403, detail="Access denied")
         # post_item is a function in db/items.sql
         res: int = queries.post_item(conn, name = item.name, description = item.description, price = item.price, seller_email = item.seller_email)
+    except HTTPException as error:
+        raise error
     except Exception as error:
         print(error)
         raise HTTPException(status_code=409, detail="Insert item failed")
@@ -146,10 +150,15 @@ class Bid(BaseModel):
 
 # http://127.0.0.1:8000/bids/<item_id>
 @app.post("/bids/{item_id}")
-def create_bid(item_id: int, bid: Bid):
+def create_bid(request: Request,item_id: int, bid: Bid, email: str = Depends(get_access_token)):
     try:
+        if email != bid.bidder_email:
+            raise HTTPException(status_code=403, detail="Access denied")
+
         # post_bid is a function in db/bids.sql
         res: int = queries.post_bid(conn, item_id = item_id, bidder_email = bid.bidder_email, bid_amount = bid.bid_amount)
+    except HTTPException as error:
+        raise error
     except Exception as error:
         print(error)
         raise HTTPException(status_code=409, detail="Insert bid failed")
