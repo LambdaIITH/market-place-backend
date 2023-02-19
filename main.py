@@ -26,15 +26,15 @@ conn = psycopg2.connect(
     port=POSTGRES_PORT,
     cursor_factory=RealDictCursor,
 )
-#print("Opened database successfully!")
+print("Opened database successfully!")
 queries = aiosql.from_path("db/init.sql", "psycopg2")
 
-#wrapper function to check if the user is the seller
+#decorator to check if user is the owner of the item
 def user_check(func):
     @wraps(func)
     async def innerfunction(*args, **kwargs):
         user = kwargs['request'].session.get('user')
-        seller_email = queries.get_seller_email(conn, item_id=kwargs['bid'].item_id)
+        seller_email = queries.get_seller_email(conn, bid_id=kwargs['bid_id'])
         if user is not None:
             user_email = user['email']
             if user_email == seller_email[0]['seller_email']:
@@ -42,6 +42,15 @@ def user_check(func):
         return {"error": "You are not the seller"}
     return innerfunction
         
+#decorator to check if user is logged in
+def is_authenticated(func):
+    @wraps(func)
+    async def innerfunction(*args, **kwargs):
+        user = kwargs['request'].session.get('user')
+        if user is not None:
+            return await func(*args, **kwargs)
+        return {"error": "You are not logged in"}
+    return innerfunction
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
@@ -60,11 +69,9 @@ class Item(BaseModel):
     name: str
     description: str | None = None
     price: float
-    seller_email: str | None = None
 
 class Bid(BaseModel):
     item_id: int
-    bidder_email: str | None = None
     bid_amount: float
 
 # http://127.0.0.1:8000/
@@ -73,6 +80,8 @@ def read_root(request: Request):
     user = request.session.get('user')
     if user:
         return user['name']
+    else:
+        return {'error': 'You are not logged in'}
 
 
 # http://127.0.0.1:8000/items/5?q=somequery
@@ -82,14 +91,16 @@ def read_item(item_id: int, q: Union[str, None] = None):
 
 #route to create a new item for selling
 @app.post("/new_item")
-async def new_item(item: Item):
-    queries.create_item(conn, name=item.name, description=item.description, price=item.price, seller_email=item.seller_email)
+@is_authenticated
+async def new_item(item: Item, request: Request):
+    queries.create_item(conn, name=item.name, description=item.description, price=item.price, seller_email=request.session.get('user')['email'])
     conn.commit()
     
 #route to insert bids of a user on a particular item
 @app.post("/new_bid")
-async def new_bid(bid: Bid):
-    queries.create_bid(conn, item_id=bid.item_id, bidder_email=bid.bidder_email, bid_amount=bid.bid_amount)
+@is_authenticated
+async def new_bid( bid: Bid, request: Request):
+    queries.create_bid(conn, item_id=bid.item_id, bidder_email=request.session.get('user')['email'] , bid_amount=bid.bid_amount)
     conn.commit()
 
 #route to get/view all bids for an item   
@@ -97,12 +108,12 @@ async def new_bid(bid: Bid):
 async def get_bids(item_id: int):
     return queries.get_bids(conn, item_id=item_id)
 
-#route to accept a bid for an item, only the seller can accept the bid(uses wrapper function)
-@app.post("/accept_bid")
+# Route to accept a bid for an item
+@app.post("/accept_bid/{bid_id}}")
 @user_check
-async def accept_bid(request:Request,bid: Bid):
-    # queries.update_bid(conn, item_id=bid.item_id, bidder_email=bid.bidder_email, bid_amount=bid.bid_amount)
-    queries.accept_bid(conn, item_id=bid.item_id)
+async def accept_bid(request:Request,bid_id):
+    queries.accept_bid(conn, bid_id=bid_id)
+    queries.add_sales(conn, bid_id=bid_id)
     conn.commit()
 
 #route for login using google
@@ -124,3 +135,15 @@ async def auth(request: Request):
     if user:
         request.session['user'] = dict(user)
     return RedirectResponse(url='/')
+
+# Route to add a new user with their phone number
+@app.post('/add_user/{phone_number}}')
+@is_authenticated
+async def add_user(phone_number, request: Request):
+    queries.add_user(conn, name=request.session.get('user')['name'], email=request.session.get('user')['name'], phone_number=phone_number)
+    conn.commit()
+    
+# Route to get all items
+@app.get('/get_items')
+async def get_items():
+    return queries.get_items(conn)
