@@ -1,39 +1,22 @@
 from typing import Union
-
+import aiosql
 from fastapi import FastAPI
-from dotenv import load_dotenv
-import psycopg2
-from psycopg2.extras import RealDictCursor
-import os
+from pydantic import BaseModel
+from src import databaseConfig, Item
 
-DATABASE = os.getenv("DATABASE")
-POSTGRES_USER = os.getenv("POSTGRES_USER")
-POSTGRES_PASS = os.getenv("POSTGRES_PASS")
-POSTGRES_HOST = os.getenv("POSTGRES_HOST")
-POSTGRES_PORT = os.getenv("POSTGRES_PORT")
-
-conn = psycopg2.connect(
-    database=DATABASE,
-    user=POSTGRES_USER,
-    password=POSTGRES_PASS,
-    host=POSTGRES_HOST,
-    port=POSTGRES_PORT,
-    cursor_factory=RealDictCursor,
-)
-
-print("Opened database successfully!")
+conn = databaseConfig()
 
 app = FastAPI()
+queries = aiosql.from_path("db/queries.sql", "psycopg2")
 
-# http://127.0.0.1:8000/
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-
-# http://127.0.0.1:8000/items/5?q=somequery
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
-
+@app.post("/items")
+def add_items(item: Item) -> None:
+    try:
+        queries.add_items(conn, name=item.name, description=item.description, price=item.price, seller_email=item.seller_email,\
+            date_of_posting=item.date_of_posting, date_of_sale=item.date_of_sale, status=item.status)
+    except Exception as er:
+        raise ("Exception occured", er)
+    finally:
+        conn.commit()
+    return
 
