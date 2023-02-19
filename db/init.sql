@@ -12,7 +12,8 @@ CREATE TABLE items (
   seller_email VARCHAR(255) NOT NULL,
   date_of_posting TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   date_of_sale TIMESTAMP,
-  status BOOLEAN NOT NULL DEFAULT FALSE -- false = not sold, true = sold
+  status BOOLEAN NOT NULL DEFAULT FALSE, -- false = not sold, true = sold
+  FOREIGN KEY (seller_email) REFERENCES users(email)
 );
 
 CREATE TABLE bids (

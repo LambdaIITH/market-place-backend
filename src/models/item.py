@@ -12,7 +12,7 @@ class Item(BaseModel):
     status: bool
 
     @validator("date_of_posting", pre=True)
-    def parse_birthdate(cls, value):
+    def parse_date(cls, value):
         return datetime.strptime(
             value,
             "%Y-%m-%d"
